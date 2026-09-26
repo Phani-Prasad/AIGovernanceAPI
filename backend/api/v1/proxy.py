@@ -109,9 +109,9 @@ def _apply_pii_mask_to_messages(messages: list, original: str, masked: str) -> l
     result = []
     for msg in messages:
         if hasattr(msg, "model_dump"):
-            msg_dict = msg.model_dump()
+            msg_dict = msg.model_dump(exclude_none=True)
         else:
-            msg_dict = dict(msg)
+            msg_dict = {k: v for k, v in dict(msg).items() if v is not None}
         if isinstance(msg_dict.get("content"), str) and msg_dict["content"] in original:
             msg_dict["content"] = msg_dict["content"].replace(original, masked)
         result.append(msg_dict)
@@ -199,7 +199,7 @@ async def proxy_chat_completions(
 
     try:
         messages_dicts = [
-            m.model_dump() if hasattr(m, "model_dump") else m
+            m.model_dump(exclude_none=True) if hasattr(m, "model_dump") else {k: v for k, v in m.items() if v is not None}
             for m in processed_messages
         ]
 
