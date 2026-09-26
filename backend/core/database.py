@@ -14,15 +14,22 @@ from sqlalchemy.orm import DeclarativeBase
 from core.config import settings
 
 # ── SQLAlchemy Async Engine ────────────────────────────────────
+engine_kwargs = {
+    "echo": settings.debug,
+}
+
+if "sqlite" in settings.database_url:
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    engine_kwargs.update({
+        "pool_pre_ping": True,
+        "pool_size": 10,
+        "max_overflow": 20,
+    })
+
 engine = create_async_engine(
     settings.database_url,
-    echo=settings.debug,
-    pool_pre_ping=True,
-    pool_size=10 if "postgresql" in settings.database_url else 5,
-    max_overflow=20 if "postgresql" in settings.database_url else 0,
-    connect_args={"check_same_thread": False}
-    if "sqlite" in settings.database_url
-    else {},
+    **engine_kwargs
 )
 
 AsyncSessionLocal = async_sessionmaker(
